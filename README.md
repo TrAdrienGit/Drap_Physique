@@ -172,6 +172,3 @@ for i, file in enumerate(frames):
 Created by [YourNameHere].
 Free for educational and non-commercial use.
 License: MIT
-
-## 🖼️ Screenshots
-
