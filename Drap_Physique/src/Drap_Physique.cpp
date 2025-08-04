@@ -300,11 +300,14 @@ int main()
 	};
 	std::thread consoleThread(commandThread, &commandVariables);
 
+	using clock = std::chrono::high_resolution_clock;
+	const double targetFrameTime = 1.0 / 60.0; // 60 FPS
 	int recordingFrameNumber = 0;
 	// -----------------------------------------------------------------------------------------------
 	while (!glfwWindowShouldClose(window))
 	{
 		// ---------------------------------------------------------------------------------
+		auto frameStart = clock::now();
 		// Calcul FPS
 		float currentFrame = static_cast<float>(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
@@ -424,6 +427,14 @@ int main()
 		//	std::cout << commandVariables.windEnabled << std::endl; //applyWind(tissu);
 
 
+
+		auto frameEnd = clock::now();
+		std::chrono::duration<double> elapsed = frameEnd - frameStart;
+		double sleepTime = targetFrameTime - elapsed.count();
+
+		if (sleepTime > 0) {
+			std::this_thread::sleep_for(std::chrono::duration<double>(sleepTime));
+		}
 		// ---------------------------------------------------------------------------------
 		// Cleaning
 		glfwSwapBuffers(window);
