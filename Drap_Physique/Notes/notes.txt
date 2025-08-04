@@ -1,0 +1,21 @@
+﻿0. Point => Vertex (Vertices)
+
+
+1. What is the name of a segment between two vertices?
+
+    ✅ Name: Edge
+
+    ✅ Plural: Edges
+
+    🔹 In geometry, especially in graph theory or when discussing polygons/polyhedra, the straight line connecting two vertices is called an edge.
+
+2. What is the name of a primitive triangle formed by 3 points (vertices)?
+
+    ✅ Name: Simplex (more precisely: 2-simplex)
+
+    ✅ In everyday geometry: Triangle
+
+    ✅ If you mean the most basic triangle (no extra vertices inside), it can also be called a primitive triangle or elementary triangle.
+
+    🔹 In higher mathematics and computational geometry, the most basic shape formed by 3 non-collinear points is a 2-simplex (a triangle).
+    🔹 In simpler terms or elementary geometry, it’s just a triangle.

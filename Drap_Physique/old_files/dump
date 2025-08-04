@@ -1,0 +1,163 @@
+#ifndef PHYSIC_H
+#define PHYSIC_H
+
+#include <iostream>
+#include <glm/glm.hpp>
+#include <glm/gtx/norm.hpp>
+#include "drap.h"
+
+// ------------------------------------
+//       Drap parametres
+const unsigned int drap_len_x = 9;
+const unsigned int drap_len_y = 9;
+const GLfloat startingHeight = 0.5f;
+const float gapPointStart = 10.0f;
+
+// ------------------------------------
+//       Physique parametres
+// gravité
+float floorHeight = -50.0f;
+float mass = 0.0001f;
+float forceGravite = -9.81f*0.00000005;
+glm::vec3 vecForceGravite = glm::vec3(0.0f, 0.0f, forceGravite);
+// ressort
+float longeurVideRessort = 10.0f;
+float forceRessort = 1.0f;
+const float maxTensionForce = 1.0f;
+
+// ------------------------------------
+//       Physique Temporelle
+const float dt = 1.0f / 60.0f;
+const int substeps = 5; // Les substeps sont le nombre de fois que l'on fait une simultion physique par frame | on fait des simulations plus petites, plus frequente, donc plus précices
+
+// ------------------------------------
+//Implementation Double Buffering pour limité les déformations artificielles causées par le traitement séquentiel
+
+
+
+// -------------------------------------------------------------------------------------------------------------------
+
+
+// Fonction pour calculer la force exercée par un ressort entre deux points
+glm::vec3 tensionF(const glm::vec3& point1, const glm::vec3& point2, float k, float l0) {
+	glm::vec3 direction = point2 - point1;
+
+	float distance = glm::length(direction);
+
+	// Éviter la division par zéro
+	if (distance < 1e-6f) {
+		return glm::vec3(0.0f);
+	}
+
+	glm::vec3 directionUnitaire = direction / distance;
+
+	glm::vec3 force = -k * (distance - l0) * directionUnitaire;
+
+	return force;
+}
+
+glm::vec3 calculerForceTensionDepuisPointsFixes(
+	auto& pointMobile,                                                
+	std::vector<std::shared_ptr<Point>> pointsFixesVoisins,          
+	float k,                                                      
+	float l0                                                      
+)
+{
+	glm::vec3 forceTotale(0.0f);  //C'est une acceleration
+
+	for (auto& voisin : pointsFixesVoisins)
+	{
+		// On vérifie que le voisin existe
+		if (voisin != nullptr)
+		{
+			glm::vec3 force = tensionF(pointMobile->vecPos, voisin->vecPos, k, l0);
+			if (glm::length(force) > maxTensionForce) {
+				force = glm::normalize(force) * maxTensionForce;
+			}
+			forceTotale += force;
+		}
+	}
+
+	return forceTotale;
+}
+
+
+void applicationForces(drap::Drap LeDrap, drap::Drap temp_drap, int substep)
+{
+	//Verification que nos drap possedent le meme nombre de points
+	if (LeDrap.ListeDesPointsDansLeDrapFlattened.size() == temp_drap.ListeDesPointsDansLeDrapFlattened.size())
+	{
+		for (auto& point : LeDrap.ListeDesPointsDansLeDrapFlattened) { point->vecAccel = glm::vec3(0.0f); } // remise à zéro à chaque frame
+
+		//Mise à jours des position de points de temp_drap avec ceux du vrai drap par copie
+		temp_drap.downloadNewVertexPosition(LeDrap);
+		temp_drap.downloadAncienneVertexPosition(LeDrap);
+		// Gravité
+		for (int i = 0; i < LeDrap.ListeDesPointsDansLeDrapFlattened.size(); i++)
+		{
+			auto& point = LeDrap.ListeDesPointsDansLeDrapFlattened[i];
+			if (point->vecPos.z >= floorHeight &&
+				point->isAffectedGravity
+				&& !point->isFixed)
+			{
+				point->vecAccel += vecForceGravite * (1.0f / mass);	
+			}
+		}
+		//Tension
+		for (int i = 0; i < LeDrap.ListeDesPointsDansLeDrapFlattened.size(); i++)
+		{
+			auto& point = LeDrap.ListeDesPointsDansLeDrapFlattened[i];
+			if (point->isAffectedTension && !point->isFixed)
+			{
+				point->vecAccel += calculerForceTensionDepuisPointsFixes(point, point->listVoisin, forceRessort, longeurVideRessort);
+			}
+		}
+
+
+		//temp_drap.ListeDesPointsDansLeDrapFlattened[i]->vecPos = LeDrap.ListeDesPointsDansLeDrapFlattened[i]->vecPos + vecForceGravite * mass;  //Ancienne Formule
+		 
+		
+		//Application de l'intégration de Verlet (+pression/+réaliste)
+		//x(t + 1) = x(t) + [x(t) - x(t - 1)] + a(t) * dt²               [x(t) - x(t - 1)] c'est la vitesse
+		for (int i = 0; i < LeDrap.ListeDesPointsDansLeDrapFlattened.size(); i++)
+
+		{
+			auto& point = LeDrap.ListeDesPointsDansLeDrapFlattened[i];
+			auto& tempPoint = temp_drap.ListeDesPointsDansLeDrapFlattened[i];
+
+			if (!point->isFixed && point->vecPos.z > floorHeight)
+			{
+				tempPoint->vecPos = point->vecPos + point->calculVitesse() + point->vecAccel * dt * dt / substep; //il manque dt²
+			}
+			else if (!point->isFixed && point->vecPos.z <= floorHeight)
+			{
+				tempPoint->isFixed = true;
+				tempPoint->vecPos.z = floorHeight;
+			}
+			else
+			{
+				tempPoint->vecPos = point->vecPos; // point fixe
+			}
+		}
+		LeDrap.updateAncienneVertexPosition();
+		LeDrap.downloadNewVertexPosition(temp_drap);
+	}
+	else
+	{
+		std::cout << "ERREUR: Appliquation Physique: Le double buffering n'a pas cree 2 draps de meme taille" << std::endl;
+	}
+}
+
+
+void physicCalculationSubsteped(drap::Drap drap, int substep)
+{
+	static drap::Drap temp_drap = drap::Drap(drap_len_x, drap_len_y, startingHeight, gapPointStart);
+	for (int s = 0; s < substeps; ++s) {
+		applicationForces(drap, temp_drap, substep);
+	}
+}
+
+
+
+
+#endif // !PHYSIC_H

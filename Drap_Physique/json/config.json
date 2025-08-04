@@ -1,0 +1,79 @@
+{
+    "debug": false,
+    "activateSphere": true,
+    "activateBox": true,
+    "activateCylinder": false,
+    "activateCone": false,
+    "lockCorner": true,
+
+    "tissu": {
+        "sizeX": 12.0,
+        "sizeY": 8.0,
+        "resolutionX": 15,
+        "resolutionY": 15,
+        "startingHeight": 0.5,
+        "floorHeight": -7.0,
+        "mass": 1.0
+    },
+
+    "screen": {
+        "width": 1280,
+        "height": 720
+    },
+
+    "camera": {
+        "target": [ 0.0, 0.0, 0.0 ],
+        "height": 3.0,
+        "rotationRadius": 15.0,
+        "rotationSpeed": 0.25
+    },
+
+    "light": {
+        "ambient": [ 1.0, 1.0, 1.0 ],
+        "diffuse": [ 0.5, 0.5, 0.5 ],
+        "specular": [ 1.0, 1.0, 1.0 ],
+        "position": [ -4.0, -4.0, 3.0 ]
+    },
+
+    "physics": {
+        "gravity": {
+            "amplitude": 0.04905,
+            "directionVector": [ 0.0, 0.0, -1.0 ],
+            "isEnabled": true
+        },
+        "tension": {
+            "longeurVideRessortX": 1.0,
+            "longeurVideRessortY": 1.0,
+            "force": 2000.0,
+            "maxTensionForce": 10.0,
+            "damping": 200000.0,
+            "isEnabled": true
+        },
+        "collision": {
+            "antiClippingGap": 0.1,
+            "stiffness": 50000.0,
+            "isEnabled": true
+        },
+        "selfCollision": {
+            "minDistance": 0.04,
+            "cellSize": 0.08,
+            "isEnabled": false
+        },
+        "wind": {
+            "amplitude": 0.075,
+            "directionVector": [ 0.0, 0.0, 1.0 ],
+            "oscillationFrequency": 0.03,
+            "isOscillate": true,
+            "isEnabled": true
+        },
+        "grab": {
+            "force": 100.0,
+            "damping": 10000.0,
+            "isEnabled": true
+        },
+        "temporal": {
+            "dt": 0.008333,
+            "substeps": 20
+        }
+    }
+}
